@@ -33,23 +33,44 @@ const store = {
 };
 
 /* ---------- sound (tiny WebAudio blips) ---------- */
+const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const sound = {
   ctx: null, on: true,
-  init() { if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} } },
+  out: null,   // where every sound connects: the speakers, or on iPhone a media stream (see below)
+  init() {
+    if (this.ctx) return;
+    try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { return; }
+    this.out = this.ctx.destination;
+    // iPhone mutes Web Audio when the ring/silent switch is on, but not media playback (like a video).
+    // So on iPhone the game's sound is sent into a stream that a hidden <audio> element plays.
+    if (MOBILE && IOS && this.ctx.createMediaStreamDestination) {
+      try {
+        const dest = this.ctx.createMediaStreamDestination();
+        this.out = this.ctx.createGain(); this.out.connect(dest);
+        this.el = document.createElement('audio');
+        this.el.setAttribute('playsinline', ''); this.el.setAttribute('x-webkit-airplay', 'deny');
+        this.el.srcObject = dest.stream;
+      } catch { this.out = this.ctx.destination; this.el = null; }
+    }
+  },
+  playEl() {   // must run inside a tap; if the stream can't play, fall back to normal Web Audio output
+    if (!this.el || !this.el.paused) return;
+    this.el.play().catch(() => { if (!this.fellBack) { this.fellBack = true; this.out.connect(this.ctx.destination); } });
+  },
   tone(freq, dur, type = 'sine', vol = 0.06, slide = 0) {
     if (!this.on || !this.ctx) return;
     const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
     o.type = type; o.frequency.setValueAtTime(freq, t);
     if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(this.ctx.destination); o.start(t); o.stop(t + dur);
+    o.connect(g).connect(this.out); o.start(t); o.stop(t + dur);
   },
   noise(dur, vol = 0.18) {
     if (!this.on || !this.ctx) return;
     const n = Math.floor(this.ctx.sampleRate * dur), buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) ** 3;
     const s = this.ctx.createBufferSource(), g = this.ctx.createGain(); g.gain.value = vol;
-    s.buffer = buf; s.connect(g).connect(this.ctx.destination); s.start();
+    s.buffer = buf; s.connect(g).connect(this.out); s.start();
   },
   key() { this.tone(900, 0.03, 'triangle', 0.03); },
   bad() { this.tone(140, 0.12, 'square', 0.04); },
@@ -91,7 +112,7 @@ const clips = {
     if (!sound.on) return; sound.init(); if (!sound.ctx) return;
     const buf = await this.get(id); if (!buf) return;
     const s = sound.ctx.createBufferSource(), g = sound.ctx.createGain();
-    g.gain.value = vol; s.buffer = buf; s.connect(g).connect(sound.ctx.destination); s.start();
+    g.gain.value = vol; s.buffer = buf; s.connect(g).connect(sound.out); s.start();
   },
 };
 
@@ -118,7 +139,7 @@ const music = {
     this.filter = c.createBiquadFilter(); this.filter.type = 'lowpass'; this.filter.frequency.value = 20000;
     this.gain = c.createGain(); this.gain.gain.value = 0;
     this.src = c.createBufferSource(); this.src.buffer = this.buf; this.src.loop = true;   // gapless loop
-    this.src.connect(this.filter).connect(this.gain).connect(c.destination); this.src.start();
+    this.src.connect(this.filter).connect(this.gain).connect(sound.out); this.src.start();
     this.mood(this.cur);
   },
   mood(m) {
@@ -1151,26 +1172,21 @@ function updatePad() {   // the next key of the locked pest lights up; first key
 ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, () => { music.start(); clips.get('cryData'); clips.get('popData'); clips.get('slapData'); }, { once: true }));
 // Phones only allow sound after a real tap (iPhone counts touchend and click, not touchstart), so keep trying until it runs.
 try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}   // iPhone: play even when the ring switch is on silent
-// iPhone: Web Audio is silenced by the ring/silent switch and can stay locked if it was created before a tap.
-// Playing a silent <audio> element inside the tap switches the page to "playback" audio, so the game is heard.
-const silentEl = (() => {
-  if (!MOBILE) return null;
-  const n = 4410, b = new DataView(new ArrayBuffer(44 + n * 2)), w = (o, t) => [...t].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)));
-  w(0, 'RIFF'); b.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
-  b.setUint32(24, 44100, true); b.setUint32(28, 88200, true); b.setUint16(32, 2, true); b.setUint16(34, 16, true); w(36, 'data'); b.setUint32(40, n * 2, true);
-  const a = new Audio(URL.createObjectURL(new Blob([b], { type: 'audio/wav' }))); a.loop = true; a.setAttribute('playsinline', ''); a.preload = 'auto';
-  return a;
-})();
 function unlockAudio(e) {
   if (!sound.on) return;
-  if (silentEl && e && e.isTrusted && silentEl.paused) silentEl.play().catch(() => {});
   sound.init(); if (!sound.ctx) return;
+  if (!e || e.isTrusted) sound.playEl();
   if (sound.ctx.state !== 'running') sound.ctx.resume().then(() => { const h = $('titleHint'); if (MOBILE && h) h.textContent = ''; }).catch(() => {});
   music.start(); clips.get('popData'); clips.get('slapData'); clips.get('cryData');
 }
 ['touchend', 'click', 'pointerup', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { passive: true }));
 // coming back to the tab (or after a phone call) iPhone leaves the context 'interrupted': the next tap resumes it
-document.addEventListener('visibilitychange', () => { if (!document.hidden && sound.ctx && sound.ctx.state !== 'running' && MOBILE) sound.ctx.resume().catch(() => {}); });
+document.addEventListener('visibilitychange', () => {
+  if (!MOBILE || !sound.ctx) return;
+  if (document.hidden) { sound.el?.pause(); return; }   // no music in the background
+  if (sound.ctx.state !== 'running') sound.ctx.resume().catch(() => {});
+  if (sound.on) sound.el?.play().catch(() => {});        // if this is refused, the next tap restarts it
+});
 $('btnZhuyin').addEventListener('click', () => setZhuyin(!ZH.on));
 $('btnStart').addEventListener('click', () => { hideIdle(); newGame(); });
 $('btnAgain').addEventListener('click', newGame);
