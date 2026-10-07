@@ -1,7 +1,9 @@
 # Babysitter — Phone Version
 
-Based on **Babysitter** (web): [yche1364-yj.github.io/game-babysitter](https://yche1364-yj.github.io/game-babysitter/) · [GitHub](https://github.com/yche1364-YJ/game-babysitter)
+Based on **Babysitter** (web): [github.com/yche1364-YJ/game-babysitter](https://github.com/yche1364-YJ/game-babysitter)
 
+**Web version:** [yche1364-yj.github.io/game-babysitter](https://yche1364-yj.github.io/game-babysitter/)  
+**Play on your phone:** [yche1364-yj.github.io/game-babysitter-mobile](https://yche1364-yj.github.io/game-babysitter-mobile/)  
 **Play on itch.io:** [link coming soon]
 
 ![Phone mode](phone-mode-preview.png)
