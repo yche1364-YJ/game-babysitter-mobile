@@ -1151,13 +1151,26 @@ function updatePad() {   // the next key of the locked pest lights up; first key
 ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, () => { music.start(); clips.get('cryData'); clips.get('popData'); clips.get('slapData'); }, { once: true }));
 // Phones only allow sound after a real tap (iPhone counts touchend and click, not touchstart), so keep trying until it runs.
 try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}   // iPhone: play even when the ring switch is on silent
-function unlockAudio() {
+// iPhone: Web Audio is silenced by the ring/silent switch and can stay locked if it was created before a tap.
+// Playing a silent <audio> element inside the tap switches the page to "playback" audio, so the game is heard.
+const silentEl = (() => {
+  if (!MOBILE) return null;
+  const n = 4410, b = new DataView(new ArrayBuffer(44 + n * 2)), w = (o, t) => [...t].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); b.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
+  b.setUint32(24, 44100, true); b.setUint32(28, 88200, true); b.setUint16(32, 2, true); b.setUint16(34, 16, true); w(36, 'data'); b.setUint32(40, n * 2, true);
+  const a = new Audio(URL.createObjectURL(new Blob([b], { type: 'audio/wav' }))); a.loop = true; a.setAttribute('playsinline', ''); a.preload = 'auto';
+  return a;
+})();
+function unlockAudio(e) {
   if (!sound.on) return;
+  if (silentEl && e && e.isTrusted && silentEl.paused) silentEl.play().catch(() => {});
   sound.init(); if (!sound.ctx) return;
-  if (sound.ctx.state !== 'running') sound.ctx.resume().catch(() => {});
+  if (sound.ctx.state !== 'running') sound.ctx.resume().then(() => { const h = $('titleHint'); if (MOBILE && h) h.textContent = ''; }).catch(() => {});
   music.start(); clips.get('popData'); clips.get('slapData'); clips.get('cryData');
 }
 ['touchend', 'click', 'pointerup', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { passive: true }));
+// coming back to the tab (or after a phone call) iPhone leaves the context 'interrupted': the next tap resumes it
+document.addEventListener('visibilitychange', () => { if (!document.hidden && sound.ctx && sound.ctx.state !== 'running' && MOBILE) sound.ctx.resume().catch(() => {}); });
 $('btnZhuyin').addEventListener('click', () => setZhuyin(!ZH.on));
 $('btnStart').addEventListener('click', () => { hideIdle(); newGame(); });
 $('btnAgain').addEventListener('click', newGame);
@@ -1193,13 +1206,14 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) pause
   // Music starts on the title screen. Browsers keep sound paused until the first click or key press,
   // so until then the hint under the buttons asks for one.
   // (waits for the whole page: the single-file build keeps its audio in tags after this script)
-  const startMusic = () => { if (sound.on) { sound.init(); music.start(); } };
+  const startMusic = () => { if (sound.on && !MOBILE) { sound.init(); music.start(); } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startMusic); else startMusic();
   const hint = () => {
     const waiting = sound.on && sound.ctx && sound.ctx.state !== 'running';
-    if (MOBILE) { $('titleHint').textContent = waiting ? 'Tap for sound' : ''; return; }
+    if (MOBILE) { $('titleHint').textContent = sound.on && sound.ctx?.state !== 'running' ? 'Tap for sound' : ''; return; }
     $('titleHint').textContent = waiting ? 'Keyboard needed · Click anywhere for music' : 'Keyboard needed';
   };
   hint(); document.addEventListener('DOMContentLoaded', () => { hint(); sound.ctx?.addEventListener('statechange', hint); });
+  if (MOBILE) document.addEventListener('touchend', () => setTimeout(hint, 300), { passive: true });
   requestAnimationFrame(frame);
 })();
