@@ -142,13 +142,28 @@ const G = {
 };
 
 /* ---------- gauge ---------- */
-const R = 46;
+// On phones the meter is a rainbow arching over the crib; on computers it's a ring above the baby.
+const R = MOBILE ? 132 : 46;
 function arcPoint(deg) { const a = deg * Math.PI / 180; return [R * Math.cos(a), R * Math.sin(a)]; }
 function arcPath(frac) {
   frac = Math.max(0.001, Math.min(1, frac));
-  const start = 120, sweep = 300 * frac;
+  const start = MOBILE ? 180 : 120, sweep = (MOBILE ? 180 : 300) * frac;
   const [x1, y1] = arcPoint(start), [x2, y2] = arcPoint(start + sweep);
   return `M${x1.toFixed(2)} ${y1.toFixed(2)} A${R} ${R} 0 ${sweep > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+}
+if (MOBILE) {
+  $('gauge').setAttribute('transform', 'translate(482 404)');
+  for (const g of ['gradNight', 'gradDay']) { $(g).setAttribute('x1', -R); $(g).setAttribute('x2', R); }
+  for (const id of ['gTrack', 'gFill']) $(id).setAttribute('stroke-width', 13);
+  // two soft inner bands make the arch read as a rainbow
+  for (const [r, op] of [[R - 14, 0.28], [R - 24, 0.16]]) {
+    const band = el('path', { d: `M${-r} 0 A${r} ${r} 0 0 1 ${r} 0`, fill: 'none', stroke: 'url(#gradDay)', 'stroke-width': 6, 'stroke-linecap': 'round', opacity: op });
+    $('gauge').insertBefore(band, $('gTrack'));
+  }
+  $('gNum').setAttribute('y', -84); $('gNum').setAttribute('font-size', 19);
+  $('gUnit').setAttribute('y', -66); $('gUnit').setAttribute('font-size', 10);
+  $('gLeft').setAttribute('x', -R); $('gLeft').setAttribute('y', 24); $('gLeft').setAttribute('font-size', 12);
+  $('gRight').setAttribute('x', R); $('gRight').setAttribute('y', 24); $('gRight').setAttribute('font-size', 12);
 }
 $('gTrack').setAttribute('d', arcPath(1));
 
@@ -208,7 +223,7 @@ function setZhuyin(on) {
 }
 function titleHintText() {
   const best = store.get('babysitter-best2');
-  $('titleHint').textContent = best ? `Your best: ${best.score}` : (MOBILE ? 'Tap the keys on screen' : 'Keyboard needed');
+  $('titleHint').textContent = best ? `Your best: ${best.score}` : (MOBILE ? '' : 'Keyboard needed');
 }
 
 /* ---------- entities ---------- */
@@ -460,7 +475,7 @@ function defeat(e) {
 
 /* ---------- flow ---------- */
 function show(id) {
-  document.body.classList.toggle('on-title', id === 'scrTitle');
+  document.body.classList.toggle('on-title', ['scrTitle', 'scrOver', 'scrBoard', 'scrPause'].includes(id));
   for (const s of ['scrTitle', 'scrCard', 'scrPause', 'scrOver', 'scrBoard']) $(s).hidden = s !== id;
   const playing = id === null;
   $('btnPause').hidden = !(playing || id === 'scrPause');
@@ -816,7 +831,9 @@ function showSaveArea() {
     return;
   }
   const say = (rank, total) => {
-    line.textContent = G.saved
+    line.textContent = MOBILE
+      ? (G.saved ? `You're #${rank} of ${total}!` : `#${rank} of ${total} · save to join`)
+      : G.saved
       ? `You're the #${rank} babysitter out of ${total}.`
       : `This game ranks #${rank} out of ${total}. Save it to join the board.`;
   };
@@ -1100,6 +1117,7 @@ function buildPad() {
   box.append(last);
 }
 function padPress(k, btn) {
+  unlockAudio();
   btn.classList.add('down'); setTimeout(() => btn.classList.remove('down'), 90);
   if (G.screen !== 'play') return;
   if (k === 'back') releaseTarget(); else typeChar(k);
@@ -1125,6 +1143,15 @@ function updatePad() {   // the next key of the locked pest lights up; first key
 }
 
 ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, () => { music.start(); clips.get('cryData'); clips.get('popData'); clips.get('slapData'); }, { once: true }));
+// Phones only allow sound after a real tap (iPhone counts touchend and click, not touchstart), so keep trying until it runs.
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}   // iPhone: play even when the ring switch is on silent
+function unlockAudio() {
+  if (!sound.on) return;
+  sound.init(); if (!sound.ctx) return;
+  if (sound.ctx.state !== 'running') sound.ctx.resume().catch(() => {});
+  music.start(); clips.get('popData'); clips.get('slapData'); clips.get('cryData');
+}
+['touchend', 'click', 'pointerup', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { passive: true }));
 $('btnZhuyin').addEventListener('click', () => setZhuyin(!ZH.on));
 $('btnStart').addEventListener('click', () => { hideIdle(); newGame(); });
 $('btnAgain').addEventListener('click', newGame);
@@ -1164,8 +1191,8 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) pause
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startMusic); else startMusic();
   const hint = () => {
     const waiting = sound.on && sound.ctx && sound.ctx.state !== 'running';
-    const base = MOBILE ? 'Tap the keys on screen' : 'Keyboard needed';
-    $('titleHint').textContent = waiting ? base + (MOBILE ? ' · Tap anywhere for music' : ' · Click anywhere for music') : base;
+    if (MOBILE) { $('titleHint').textContent = waiting ? 'Tap for sound' : ''; return; }
+    $('titleHint').textContent = waiting ? 'Keyboard needed · Click anywhere for music' : 'Keyboard needed';
   };
   hint(); document.addEventListener('DOMContentLoaded', () => { hint(); sound.ctx?.addEventListener('statechange', hint); });
   requestAnimationFrame(frame);
