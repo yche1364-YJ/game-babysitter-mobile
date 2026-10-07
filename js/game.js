@@ -147,7 +147,7 @@ const R = MOBILE ? 132 : 46;
 function arcPoint(deg) { const a = deg * Math.PI / 180; return [R * Math.cos(a), R * Math.sin(a)]; }
 function arcPath(frac) {
   frac = Math.max(0.001, Math.min(1, frac));
-  const start = MOBILE ? 180 : 120, sweep = (MOBILE ? 180 : 300) * frac;
+  const start = MOBILE ? 202 : 120, sweep = (MOBILE ? 136 : 300) * frac;
   const [x1, y1] = arcPoint(start), [x2, y2] = arcPoint(start + sweep);
   return `M${x1.toFixed(2)} ${y1.toFixed(2)} A${R} ${R} 0 ${sweep > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
 }
@@ -156,14 +156,17 @@ if (MOBILE) {
   for (const g of ['gradNight', 'gradDay']) { $(g).setAttribute('x1', -R); $(g).setAttribute('x2', R); }
   for (const id of ['gTrack', 'gFill']) $(id).setAttribute('stroke-width', 13);
   // two soft inner bands make the arch read as a rainbow
+  const at = (r, deg) => [r * Math.cos(deg * Math.PI / 180), r * Math.sin(deg * Math.PI / 180)];
   for (const [r, op] of [[R - 14, 0.28], [R - 24, 0.16]]) {
-    const band = el('path', { d: `M${-r} 0 A${r} ${r} 0 0 1 ${r} 0`, fill: 'none', stroke: 'url(#gradDay)', 'stroke-width': 6, 'stroke-linecap': 'round', opacity: op });
+    const [x1, y1] = at(r, 202), [x2, y2] = at(r, 338);
+    const band = el('path', { d: `M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`, fill: 'none', stroke: 'url(#gradDay)', 'stroke-width': 6, 'stroke-linecap': 'round', opacity: op });
     $('gauge').insertBefore(band, $('gTrack'));
   }
   $('gNum').setAttribute('y', -84); $('gNum').setAttribute('font-size', 19);
   $('gUnit').setAttribute('y', -66); $('gUnit').setAttribute('font-size', 10);
-  $('gLeft').setAttribute('x', -R); $('gLeft').setAttribute('y', 24); $('gLeft').setAttribute('font-size', 12);
-  $('gRight').setAttribute('x', R); $('gRight').setAttribute('y', 24); $('gRight').setAttribute('font-size', 12);
+  const [ex, ey] = at(R, 202);   // the arc's left end; labels sit just under each end, clear of the crib
+  $('gLeft').setAttribute('x', ex.toFixed(1)); $('gLeft').setAttribute('y', (ey + 24).toFixed(1)); $('gLeft').setAttribute('font-size', 13);
+  $('gRight').setAttribute('x', (-ex).toFixed(1)); $('gRight').setAttribute('y', (ey + 24).toFixed(1)); $('gRight').setAttribute('font-size', 13);
 }
 $('gTrack').setAttribute('d', arcPath(1));
 
@@ -583,7 +586,8 @@ function gameOver(title, won = false) {
   if (won) {
     $('certScore').textContent = G.score.toLocaleString('en-US');
     $('certDate').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    $('certBody').textContent = `kept the baby asleep for ${CONFIG.finalDay} nights and laughing for ${CONFIG.finalDay} days.`;
+    $('certBody').textContent = MOBILE ? `You handled the baby for ${CONFIG.finalDay} nights and days!!`
+      : `kept the baby asleep for ${CONFIG.finalDay} nights and laughing for ${CONFIG.finalDay} days.`;
   }
   $('stScore').textContent = G.score.toLocaleString('en-US');
   $('stNights').textContent = s.nights; $('stDays').textContent = s.days; $('stHits').textContent = s.hits;

@@ -243,3 +243,65 @@ body.mobile.on-title #pad { visibility: hidden; }
 body.mobile #scrTitle > p, body.mobile #zhNote, body.mobile #cardBody, body.mobile #typeHint,
 body.mobile #scrOver .save label, body.mobile #boardNote, body.mobile #scrPause .small { display: none !important; }
 body.mobile #titleHint:empty { display: none; }
+
+/* title: Leaderboard smaller than Start */
+body.mobile #scrTitle .row { flex-direction: column; align-items: center; gap: 1.4cqw; }
+body.mobile #btnBoard1 { font-size: 1.7cqw; padding: 0.8cqw 3cqw; }
+/* round cards: smaller headline, a little air above the character card */
+body.mobile #cardTitle { zoom: 1.2; }
+body.mobile #scrCard .new-pill { margin-top: 1.6cqw; }
+/* results headline on one line with a bigger crying face */
+body.mobile #scrOver .over-head { zoom: 1.5; gap: 1.6cqw; }
+body.mobile #scrOver #overTitle { white-space: nowrap; }
+body.mobile .over-face { width: 11cqw; }
+/* babysitting report: narrower and taller for a phone */
+body.mobile #scrOver .report {
+  zoom: 1; width: 84cqw; box-sizing: border-box; margin-top: 6cqw; padding: 5cqw 5cqw 4cqw; gap: 2cqw; border-top-width: 2.4cqw; border-radius: 2cqw;
+  background: #fffdf6 repeating-linear-gradient(transparent 0 6.4cqw, #dfe8f0 6.4cqw 6.7cqw);
+}
+body.mobile .report .r-clip { top: -5.6cqw; width: 28cqw; height: 6cqw; border-radius: 2cqw 2cqw 1cqw 1cqw; }
+body.mobile .report .r-clip::after { top: 1.4cqw; width: 7cqw; height: 2cqw; }
+body.mobile .report .r-head { order: 1; font-size: 2.8cqw; justify-content: center; }
+body.mobile .report .r-sitter { order: 2; font-size: 3.4cqw; max-width: none; text-align: center; margin-top: 1.2cqw; }
+body.mobile .report .r-sitter b { font-size: 5.6cqw; margin-left: 1.4cqw; }
+body.mobile .report .r-score { order: 3; flex-wrap: wrap; justify-content: center; gap: 0.5cqw 2.4cqw; margin: 1.6cqw 0 0; }
+body.mobile .report .r-score span { font-size: 2.8cqw; }
+body.mobile .report .r-score b { font-size: 12cqw; text-shadow: 0.5cqw 0.7cqw 0 var(--navy); }
+body.mobile .report .r-score .r-next { flex-basis: 100%; margin: 0.6cqw 0 0; font-size: 3cqw; text-align: center; }
+body.mobile .report .r-stamp {
+  order: 4; position: relative; top: auto; right: auto; align-self: center; margin: 3cqw 0 2.4cqw;
+  padding: 1.4cqw 4cqw 1.6cqw; border-width: 0.8cqw; outline-width: 0.3cqw; outline-offset: 0.7cqw; border-radius: 1cqw;
+}
+body.mobile .report .r-stamp small { font-size: 2.4cqw; }
+body.mobile .report .r-stamp b { font-size: 5cqw; }
+body.mobile .report .r-new { top: -3cqw; right: -2cqw; padding: 1.2cqw 2.6cqw; font-size: 3.2cqw; }
+body.mobile .report .stats { order: 5; grid-template-columns: 0.8fr 0.8fr 0.8fr 1.1fr 1.1fr; justify-content: stretch; text-align: center; gap: 1cqw; padding-top: 2.4cqw; border-top-width: 0.4cqw; }
+body.mobile .report .stats div { align-items: center; }
+body.mobile .report .stats b { font-size: 4.8cqw; }
+body.mobile .report .stats span { font-size: 1.9cqw; letter-spacing: 0.08em; }
+/* buttons: Play again on its own row, Leaderboard + Home under it, same total width */
+body.mobile #scrOver .row { zoom: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 3cqw; width: 84cqw; }
+body.mobile #scrOver .row .btn { font-size: 3.8cqw; padding: 3.2cqw 0; box-shadow: 0 1.2cqw 0 var(--navy); }
+body.mobile #scrOver .row .btn.ghost { box-shadow: inset 0 0 0 0.6cqw var(--cream); }
+body.mobile #btnAgain { grid-column: 1 / -1; font-size: 5cqw !important; }
+body.mobile #scrOver .save { zoom: 1; width: 84cqw; display: grid; grid-template-columns: 1fr auto; gap: 3cqw; }
+body.mobile #scrOver .save input { width: 100%; box-sizing: border-box; font-size: 4.4cqw; padding: 3cqw 4cqw; border-radius: 99px; border-width: 0.6cqw; min-width: 0; }
+body.mobile #scrOver .save .btn { font-size: 3.6cqw; padding: 3cqw 4.4cqw; white-space: nowrap; box-shadow: 0 1cqw 0 var(--navy); }
+body.mobile #scrOver .rank { zoom: 1; font-size: 4.4cqw !important; }
+/* certificate: tall card, everything wraps */
+body.mobile #scrOver .earned { zoom: 1.6; }
+body.mobile #scrOver .cert {
+  zoom: 1; width: 84cqw; box-sizing: border-box; padding: 6cqw 6cqw 6cqw; gap: 1.8cqw; margin-top: 2cqw; margin-bottom: 5cqw; border-radius: 2.4cqw; outline-width: 0.9cqw; outline-offset: -2.6cqw;
+  box-shadow: 0 1.4cqw 0 var(--navy);
+}
+body.mobile .cert .c-kicker { font-size: 2.8cqw; }
+body.mobile .cert .c-title { font-size: 7.4cqw; line-height: 1.05; max-width: 56cqw; }
+body.mobile .cert .c-small { font-size: 3.2cqw; }
+body.mobile .cert .c-name { font-size: 9cqw; min-width: 50cqw; border-bottom-width: 0.5cqw; }
+body.mobile .cert .c-body { font-size: 3.4cqw; white-space: normal; line-height: 1.35; }
+body.mobile .cert .c-foot { font-size: 2.6cqw; margin-top: 2cqw; gap: 2cqw; }
+body.mobile .cert .c-foot b { font-size: 4cqw; }
+body.mobile .cert .c-seal { width: 18cqw; top: -5cqw; right: 1cqw; }
+/* leaderboard: more air between rows */
+body.mobile #scrBoard .board { gap: 1.3cqw; }
+body.mobile #scrBoard .board li { padding: 1.3cqw 1.6cqw; }
