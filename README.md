@@ -3,7 +3,7 @@
 Based on **Babysitter** (web): [github.com/yche1364-YJ/game-babysitter](https://github.com/yche1364-YJ/game-babysitter)
 
 **Play on your phone:** [yche1364-yj.github.io/game-babysitter-mobile](https://yche1364-yj.github.io/game-babysitter-mobile/)  
-**Play on itch.io:** [link coming soon]
+**Play on itch.io:** [https://yjcgame.itch.io/babysitter-mobile](https://yjcgame.itch.io/babysitter-mobile)
 
 ![Phone mode](phone-mode-preview.png)
 
