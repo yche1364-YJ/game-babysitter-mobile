@@ -660,6 +660,7 @@ function startEnding() {
   music.mood('ending');
   G.screen = 'ending'; G.endT = 0; G.endFx = {};
   show(null); $('btnPause').hidden = true;
+  document.body.classList.add('on-title');   // phone: hide the keyboard during the ending
   $('hud').setAttribute('display', 'none'); $('typebar').setAttribute('display', 'none'); $('dangerRing').setAttribute('display', 'none');
   setFace('laugh'); $('babyHand').setAttribute('display', 'none');
   buildBabyOut();
@@ -681,9 +682,10 @@ function stepEnding(dt) {
     const k = (t - 2.4); x = 200 + 70 * k; y = 60 - Math.abs(Math.sin(k * 9)) * 6; wave = Math.sin(k * 12) * 0.5;
   } else {                                        // jump for joy
     const k = t - 3.4; x = 270; y = 60 - Math.abs(Math.sin(k * 5.5)) * 55; armUp = 1; wave = Math.sin(k * 16);
-    if (!G.endFx.c1) { G.endFx.c1 = 1; confetti(752, 380); sound.win(); }
-    if (k > 0.6 && !G.endFx.c2) { G.endFx.c2 = 1; confetti(620, 300); confetti(880, 320); }
+    if (!G.endFx.c1) { G.endFx.c1 = 1; confetti(MOBILE ? 630 : 752, 380); sound.win(); }
+    if (k > 0.6 && !G.endFx.c2) { G.endFx.c2 = 1; confetti(MOBILE ? 520 : 620, 300); confetti(MOBILE ? 700 : 880, 320); }
   }
+  if (MOBILE) x *= 0.55;   // phone: stay inside the narrower portrait scene
   babyOut.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
   const a = 180 * armUp;
   babyOut.armL.setAttribute('transform', `rotate(${(a + wave * 15).toFixed(1)} 440 450)`);
